@@ -92,7 +92,7 @@ module.exports.run = async function (interaction) {
     ephemeral: true
   })
 }
-// @@@ change tag
+// @@@ change tag https://discord.js.org/#/docs/discord.js/main/typedef/ThreadEditOptions
 // @@@ parse and add media
 // @@@ connect buttons
 // @@@ rate_limit
