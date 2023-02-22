@@ -36,12 +36,6 @@ module.exports.run = async function (interaction) {
     interaction.reply({ content: `Ви використовуєте команду занадто часто, дозволено через **${Math.trunc((rate_limit - urate) / 1000)} сек.**`, ephemeral: true })
     return
   } else await this.db.obj.set(rate_limit_id, new Date().getTime())
-  // Check if the user who triggered the interaction has the "Administrator" permission
-  if (!interaction.member.permissions.serialize().Administrator) {
-    // If not, send a reply indicating that the command is only available to administrators
-    interaction.reply({ content: 'Команда дозволена тільки адміністрації, ви маєте мати право `ADMINISTRATOR`', ephemeral: true })
-    return
-  }
   // check if channel is created
   if (!channel) {
     interaction.reply({ 
@@ -142,6 +136,12 @@ module.exports.run = async function (interaction) {
 }
 // connect buttons
 module.exports.component = async function (interaction) {
+  // Check if the user who triggered the interaction has the "Administrator" permission
+  if (!interaction.member.permissions.serialize().Administrator) {
+    // If not, send a reply indicating that the command is only available to administrators
+    interaction.reply({ content: 'Команда дозволена тільки адміністрації, ви маєте мати право `ADMINISTRATOR`', ephemeral: true })
+    return
+  }
   // import data from database
   const {
     channel = false, tags = false, alert = false, webhook = false
