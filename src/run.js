@@ -32,7 +32,7 @@
     bot[method] = temp[method]
   }
   // clear data
-  delete temp  
+  delete temp
   // run bot
   bot.login(process.env.TOKEN)
 })()

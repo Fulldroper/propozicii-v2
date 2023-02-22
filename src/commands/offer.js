@@ -24,16 +24,24 @@ const { WebhookClient: whc , AttachmentBuilder: attach} =  require("discord.js")
 const { default: axios} = require("axios")
 const exploit = "||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||_ _ _ _ _ _ _ "
 module.exports.run = async function (interaction) {
+  // import data from database
+  const {
+    channel = false, rate_limit = 0, webhook = false, mention = false, tags = false
+  } = await this.db.get(`${this.collection}:${interaction.guildId}`) || {}
+  // @@@ rate_limit
+  const rate_limit_id = `${this.collection}:${interaction.guildId}:${interaction.user.id}`
+  let urate = new Date().getTime() - Number(await this.db.obj.get(rate_limit_id) || 0)
+  
+  if (urate <= rate_limit) {
+    interaction.reply({ content: `Ви використовуєте команду занадто часто, дозволено через **${Math.trunc((rate_limit - urate) / 1000)} сек.**`, ephemeral: true })
+    return
+  } else await this.db.obj.set(rate_limit_id, new Date().getTime())
   // Check if the user who triggered the interaction has the "Administrator" permission
   if (!interaction.member.permissions.serialize().Administrator) {
     // If not, send a reply indicating that the command is only available to administrators
     interaction.reply({ content: 'Команда дозволена тільки адміністрації, ви маєте мати право `ADMINISTRATOR`', ephemeral: true })
     return
   }
-  // import data from database
-  const {
-    channel = false, rate_limit = 0, webhook = false, mention = false, tags = false
-  } = await this.db.get(`${this.collection}:${interaction.guildId}`) || {}
   // check if channel is created
   if (!channel) {
     interaction.reply({ 
@@ -51,23 +59,19 @@ module.exports.run = async function (interaction) {
     }).catch(e => this.emit('error', e));
     return
   }
-
-  // @@@ rate_limit
   // import values from command
   let { value: content } = interaction.options.get("text") || {}
   const { id:uid, avatar: uavatar, username, discriminator: utag} = interaction.member.user
   const avatarURL = `https://cdn.discordapp.com/avatars/${uid}/${uavatar}.png`
-  // check on mention
-  if (mention) {
-    // if have mention add to text
-    content = `<@${mention}>, ` + content
-  }
   // create webhook
   const whook = new whc({url: webhook})
   // send offer
   const message = {
     "threadName": content.slice(0, 100 - 3) + '...',
-    avatarURL, content, username: username + utag,
+    avatarURL, 
+    // mention if setup it
+    content: mention ? `<@&${mention}>, ` + content : content, 
+    username: username,
     "attachments": [],
     "components": [{
       "type": 1,
@@ -121,7 +125,18 @@ module.exports.run = async function (interaction) {
   }).catch(e => this.emit('error', e));
   // aswer to req
   interaction.reply({
-    content: `Ваша пропозиція успішно створена [ПРОПОЗИЦІЯ](https://canary.discord.com/channels/${interaction.guildId}/${whookId}/${whookId})`,
+    content: `Ваша пропозиція успішно створена`,
+    components:[{
+      type: 1,
+      components: [{
+        type: 2,
+        style: 5,
+        label: "Ваша пропозиція",
+        emoji: { name: "📑"},
+        url: `https://canary.discord.com/channels/${interaction.guildId}/${whookId}/${whookId}`
+
+      }]
+    }],
     ephemeral: true
   })
 }
@@ -162,8 +177,20 @@ module.exports.component = async function (interaction) {
   // alert if can
   if (alert) {
     const usr = await interaction.guild.members.fetch(interaction.meta[2])
-    console.log(usr);
-    usr.send(`Ваша пропозиція була [${type === 'accept' ?  'прийнята' : 'відхилена'}](https://canary.discord.com/channels/${interaction.guildId}/${interaction.message.id}/${interaction.message.id})`)
+    usr.send({
+      content: `Ваша пропозиція була ${type === 'accept' ?  'прийнята' : 'відхилена'}`,
+      components:[{
+        type: 1,
+        components: [{
+          type: 2,
+          style: 5,
+          label: "Ваша пропозиція",
+          emoji: { name: "📑"},
+          url: `https://canary.discord.com/channels/${interaction.guildId}/${interaction.message.id}/${interaction.message.id}`
+
+        }]
+      }]
+    })
     .catch(e => this.emit('error', e));
   }
   // close interaction

@@ -28,13 +28,15 @@ module.exports.info = {
       "description": "кількість секунд, яку користувач повинен чекати, перш ніж надіслати інше повідомлення (до 21600)",
       "type": 4,
       "min_value": 0,
-      "max_value": 21600,
+      "max_value": 21600000,
       "choices": [
-        { "name": "5 секунд", "value": 5 },
-        { "name": "15 секунд", "value": 15 },
-        { "name": "30 секунд", "value": 30 },
-        { "name": "1 година", "value": 60 },
-        { "name": "6 годин", "value": 21600 },
+        { "name": "15 секунд", "value": 5000 },
+        { "name": "30 секунд", "value": 30000 },
+        { "name": "1 хвилина", "value": 60000 },
+        { "name": "10 хвилин", "value": 600000 },
+        { "name": "30 хвилин", "value": 1800000 },
+        { "name": "1 година", "value": 3600000 },
+        { "name": "6 годин", "value": 21600000 },
       ],
       "required": false
     },
@@ -119,7 +121,7 @@ module.exports.run = async function(interaction) {
         lib[tag.name]
       ] = tag.id
     }
-    rate_limit?.value && channel.channel.setRateLimitPerUser(rate_limit?.value || 0, "кількість секунд, яку користувач повинен чекати, перш ніж надіслати інше повідомлення")
+    // rate_limit?.value && channel.channel.setRateLimitPerUser(rate_limit?.value || 0, "кількість секунд, яку користувач повинен чекати, перш ніж надіслати інше повідомлення")
     // creating webhook
     const webhook = (await channel.channel.createWebhook({
       name: this.user.username,
@@ -143,7 +145,7 @@ module.exports.run = async function(interaction) {
       }\n - кількість секунд, яку користувач повинен чекати ${
         rate_limit?.value ? `**${rate_limit?.value} cек.**` : "**не встановлено**"
       }\n - згадування ролі ${
-        mention?.value ? `<@${mention?.value}> (якщо ви бачите тільки цифки, в налаштуванні ролі дозволити згадування)` : "**не встановлено**"
+        mention?.value ? `<@&${mention?.value}> (якщо ви бачите тільки цифки, в налаштуванні ролі дозволити згадування)` : "**не встановлено**"
       }`,
       ephemeral: true
     })
@@ -210,7 +212,7 @@ module.exports.run = async function(interaction) {
       }\n - кількість секунд, яку користувач повинен чекати ${
         rate_limit?.value ? `**${rate_limit?.value} cек.**` : "**не встановлено**"
       }\n - згадування ролі ${
-        mention?.value ? `<@${mention?.value}> (якщо ви бачите тільки цифки, в налаштуванні ролі дозволити згадування)` : "**не встановлено**"
+        mention?.value ? `<@&${mention?.value}> (якщо ви бачите тільки цифки, в налаштуванні ролі дозволити згадування)` : "**не встановлено**"
       }`,
       ephemeral: true
     })
