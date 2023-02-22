@@ -5,8 +5,10 @@ module.exports.info = {
   "description": "Створити пропозицію",
   "options": [{
     "name": "text",
-    "description": "Текст пропозиції",
+    "description": "Текст пропозиції (мінімум 15 символів)",
     "type": 3,
+    "min_length": 15,
+    "max_length": 741,
     "required": true
   },
   {
@@ -18,10 +20,16 @@ module.exports.info = {
   }]
 }
 
-const { WebhookClient: whc } =  require("discord.js")
+const { WebhookClient: whc , AttachmentBuilder: attach} =  require("discord.js")
 const { default: axios} = require("axios")
-
+const exploit = "||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||_ _ _ _ _ _ _ "
 module.exports.run = async function (interaction) {
+  // Check if the user who triggered the interaction has the "Administrator" permission
+  if (!interaction.member.permissions.serialize().Administrator) {
+    // If not, send a reply indicating that the command is only available to administrators
+    interaction.reply({ content: 'Команда дозволена тільки адміністрації, ви маєте мати право `ADMINISTRATOR`', ephemeral: true })
+    return
+  }
   // import data from database
   const {
     channel = false, rate_limit = 0, webhook = false, mention = false, tags = false
@@ -58,7 +66,7 @@ module.exports.run = async function (interaction) {
   const whook = new whc({url: webhook})
   // send offer
   const message = {
-    "threadName": "new thread",
+    "threadName": content.slice(0, 100 - 3) + '...',
     avatarURL, content, username: username + utag,
     "attachments": [],
     "components": [{
@@ -69,29 +77,33 @@ module.exports.run = async function (interaction) {
           "style": 3,
           // "emoji": { "name": "✅" },
           "label": "Схвалити",
-          "custom_id": "accept"
+          "custom_id": `offer:accept:${uid}`
         }, {
           "type": 2,
           "style": 4,
           // "emoji": { "name": "❌" },
           "label": "Відхилити",
-          "custom_id": "deny"
+          "custom_id": `offer:deny:${uid}`
         }
       ]
     }],
   }
-  // @@@ parse and add media
+  // parse and add media
   const media = interaction.options.get("image") || false
   // if have attachment add to message
   if (media) {
-    console.log(media);
-    message.attachments.push(media.attachment)
+    message.content += exploit + media.attachment.url
   }
   const { id: whookId } = await whook.send(message)
   // get thread
   const thread = await ch.threads.fetch(whookId)
   // add thread tag
-  thread.setAppliedTags([tags.wait], 'Створення пропозиції')
+  // set delay archive
+  thread.edit({
+    appliedTags: [tags.wait],
+    autoArchiveDuration: 10080,
+    reason: "Встановлення авто-архівування на 1 тиждень, та додання тегу"
+  })
   // react on message
   await axios({
     method: 'PUT',
@@ -113,4 +125,48 @@ module.exports.run = async function (interaction) {
     ephemeral: true
   })
 }
-// @@@ connect buttons
+// connect buttons
+module.exports.component = async function (interaction) {
+  // import data from database
+  const {
+    channel = false, tags = false, alert = false, webhook = false
+  } = await this.db.get(`${this.collection}:${interaction.guildId}`) || {}
+  // parce type of command
+  const type = interaction.meta[1]
+  // check if channel is exist
+  const ch = await interaction.guild.channels.fetch(channel) || false
+  if (!ch) {
+    interaction.reply({ 
+      content: '❌ Канал для пропозицій не існує. Виконайте команду `/init` (тільки для адміністрації)',
+      ephemeral: true 
+    }).catch(e => this.emit('error', e));
+    return
+  }
+  // get thread
+  const thread = await ch.threads.fetch(interaction.channelId)
+  // change message (clear buttons)
+  // add thread tag & archive
+  const whook = new whc({url: webhook})
+  await whook.editMessage(interaction.message.id, {
+    content: interaction.message.content,
+    threadId: interaction.message.id,
+    username: interaction.meta[2],
+    avatarURL: `https://cdn.discordapp.com/avatars/${interaction.meta[2]}/${interaction.message.author.avatar}.png`,
+    components: []
+  }) 
+  await thread.edit({
+    archived: true,
+    appliedTags: [tags[type]],
+    reason: `змінення статусу пропозиції на '${type}' та архівування`
+  })
+  // alert if can
+  if (alert) {
+    const usr = await interaction.guild.members.fetch(interaction.meta[2])
+    console.log(usr);
+    usr.send(`Ваша пропозиція була [${type === 'accept' ?  'прийнята' : 'відхилена'}](https://canary.discord.com/channels/${interaction.guildId}/${interaction.message.id}/${interaction.message.id})`)
+    .catch(e => this.emit('error', e));
+  }
+  // close interaction
+  interaction.deferUpdate()
+}
+// @@@ add admin coments
