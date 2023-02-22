@@ -96,6 +96,7 @@ module.exports.run = async function(interaction) {
       ],
       defaultSortOrder: 1,
       defaultForumLayout: 1,
+      defaultAutoArchiveDuration: 10080,
       reason: "Налаштування каналу для публікації пропозицій",
       permissionOverwrites:[
         {
@@ -164,6 +165,7 @@ module.exports.run = async function(interaction) {
       ],
       defaultSortOrder: 1,
       defaultForumLayout: 1,
+      defaultAutoArchiveDuration: 10080,
       reason: "Створення каналу для публікації пропозицій",
       permissionOverwrites:[
         {
