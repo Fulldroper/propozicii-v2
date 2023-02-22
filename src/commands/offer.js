@@ -170,15 +170,16 @@ module.exports.component = async function (interaction) {
     components: []
   }) 
   await thread.edit({
-    archived: true,
+    // archived: true,
     appliedTags: [tags[type]],
     reason: `змінення статусу пропозиції на '${type}' та архівування`
   })
+  thread.send(`Пропозиція була ${type === 'accept' ?  'прийнята' : 'відхилена'} адміністратором <@${interaction.member.id}>`)
   // alert if can
   if (alert) {
     const usr = await interaction.guild.members.fetch(interaction.meta[2])
     usr.send({
-      content: `Ваша пропозиція була ${type === 'accept' ?  'прийнята' : 'відхилена'}`,
+      content: `Ваша пропозиція була ${type === 'accept' ?  'прийнята' : 'відхилена'} адміністратором <@${interaction.member.id}>`,
       components:[{
         type: 1,
         components: [{
