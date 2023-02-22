@@ -83,7 +83,7 @@ module.exports.run = async function(interaction) {
   if (channel) {
     // if no name is provided but a channel is, set permissions for the channel
     // to prevent the "everyone" role from sending messages, and allow the bot to send messages
-    interaction.guild.channels.edit(channel.channel, {
+    const { availableTags } = await interaction.guild.channels.edit(channel.channel, {
       name: name?.value ? name?.value : channel.channel.name,
       type: 15,
       // rateLimitPerUser: rate_limit?.value || 0,
@@ -106,6 +106,19 @@ module.exports.run = async function(interaction) {
         },
       ]
     });
+    // saving tags ids
+    let tags = {}
+    for (const tag of availableTags) {
+      const lib = {
+        'На розгляді': 'wait',
+        'Прийнято': 'accept',
+        'Відхилено': 'deny',
+      }
+      
+      tags[
+        lib[tag.name]
+      ] = tag.id
+    }
     rate_limit?.value && channel.channel.setRateLimitPerUser(rate_limit?.value || 0, "кількість секунд, яку користувач повинен чекати, перш ніж надіслати інше повідомлення")
     // creating webhook
     const webhook = (await channel.channel.createWebhook({
@@ -118,7 +131,7 @@ module.exports.run = async function(interaction) {
       alert: alert?.value || false,
       rate_limit: rate_limit?.value || 0,
       mention: mention?.value || 0,
-      webhook
+      tags, webhook
     })
     // reply to the user with a success message and the settings that were applied
     interaction.reply({
@@ -161,6 +174,19 @@ module.exports.run = async function(interaction) {
         },
       ]
     })
+    // saving tags ids
+    let tags = {}
+    for (const tag of channel.availableTags) {
+      const lib = {
+        'На розгляді': 'wait',
+        'Прийнято': 'accept',
+        'Відхилено': 'deny',
+      }
+      
+      tags[
+        lib[tag.name]
+      ] = tag.id
+    }
     // creating webhook
     const webhook = (await channel.createWebhook({
       name: this.user.username,
@@ -172,7 +198,7 @@ module.exports.run = async function(interaction) {
       alert: alert?.value || false,
       rate_limit: rate_limit?.value || 0,
       mention: mention?.value || 0,
-      webhook
+      webhook, tags
     })
     // reply to the user with a success message and the settings that were applied
     interaction.reply({
